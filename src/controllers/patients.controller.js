@@ -29,7 +29,12 @@ export const registerPatientHandler = async (req, res) => {
 		})
 
 		if (foundPatient) {
-			return res.status(200).json(foundPatient)
+			const [patient] = await validator(
+				RegisterPatientResponseSchema,
+				foundPatient
+			)
+
+			return res.status(200).json(patient)
 		}
 
 		// attach doctor to the parsed body
@@ -47,7 +52,7 @@ export const registerPatientHandler = async (req, res) => {
 			savedPatient
 		)
 
-		return res.status(200).json(patient)
+		return res.status(201).json(patient)
 	} catch (error) {
 		logger.error(error, 'failed to register patient')
 		// if something unexpected occurs send a 500 with a failed message

@@ -18,11 +18,8 @@ const reportSchema = new mongoose.Schema(
 		},
 		patient: {
 			type: mongoose.Schema.Types.ObjectId,
+			required: true,
 			ref: 'Patient'
-		},
-		doctor: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'Doctor'
 		}
 	},
 	{
