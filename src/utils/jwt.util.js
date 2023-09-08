@@ -4,6 +4,7 @@ import config from '../config/index.js'
 import logger from '../common/logger.js'
 
 const SECRET = config.get('jwtSecret')
+const JTW_VALIDITY = config.get('jwtValidity')
 
 /**
  * Signs and generates a jwt
@@ -13,7 +14,7 @@ const SECRET = config.get('jwtSecret')
 export const signJwt = payload => {
 	try {
 		const token = jsonwebtoken.sign(payload, SECRET, {
-			expiresIn: '10m'
+			expiresIn: JTW_VALIDITY
 		})
 
 		return token

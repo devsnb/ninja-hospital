@@ -30,6 +30,13 @@ const config = convict({
 		default: 'super-secret',
 		nullable: false,
 		env: 'JWT_SECRET'
+	},
+	jwtValidity: {
+		doc: 'validity of the jwt',
+		format: String,
+		default: '2h',
+		nullable: false,
+		env: 'JWT_SECRET'
 	}
 })
 
