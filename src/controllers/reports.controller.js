@@ -8,7 +8,8 @@ import logger from '../common/logger.js'
 import {
 	CreateReportSchema,
 	CreateReportResponseSchema,
-	ReportListSchema
+	ReportListSchema,
+	ReportStatusSchema
 } from '../validators/reports.validator.js'
 
 /**
@@ -85,7 +86,7 @@ export const createReportHandler = async (req, res) => {
 }
 
 /**
- * handles patient report creation
+ * handles patient report fetching
  * @param {*} req express request object
  * @param {*} res express response object
  */
@@ -134,6 +135,58 @@ export const getAllReportsForPatentHandler = async (req, res) => {
 		})
 	} catch (error) {
 		logger.error(error, 'failed to find reports')
+		// if something unexpected occurs send a 500 with a failed message
+		return res.status(500).json({
+			message: 'failed to fetch reports, please try again'
+		})
+	}
+}
+
+/**
+ * handles reports fetching by status
+ * @param {*} req express request object
+ * @param {*} res express response object
+ */
+export const getAllReportsByStatus = async (req, res) => {
+	try {
+		// validate input
+		const [result, err] = await validator(
+			ReportStatusSchema,
+			req.params['status']
+		)
+
+		// if validation error send a 400
+		if (err) {
+			return res.status(400).json({
+				message: 'invalid input',
+				errors: {
+					status: `status is a required field & status must be one of ['Negative', 'Travelled-Quarantine', 'Symptoms-Quarantine', 'Positive-Admit']`
+				}
+			})
+		}
+
+		// get all reports by the status
+		const foundReports = await Report.find({
+			status: result
+		})
+			.populate({
+				path: 'createdBy',
+				select: ['_id', 'name', 'email']
+			})
+			.populate({
+				path: 'patient',
+				select: ['_id', 'name', 'phoneNumber', 'createdAt']
+			})
+
+		const [reports] = await validator(ReportListSchema, foundReports)
+
+		// send the report
+		res.status(200).json({
+			message: 'fetching reports successful!',
+			reports
+		})
+	} catch (error) {
+		logger.error(error, 'failed to get reports')
 		// if something unexpected occurs send a 500 with a failed message
 		return res.status(500).json({
 			message: 'failed to fetch reports, please try again'
