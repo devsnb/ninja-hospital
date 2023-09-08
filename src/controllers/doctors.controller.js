@@ -1,9 +1,14 @@
 import * as argon from 'argon2'
-import validator from 'validator'
 
 import Doctor from '../models/doctor.model.js'
 import { signJwt } from '../utils/jwt.util.js'
 import logger from '../common/logger.js'
+import validator from '../common/validator.js'
+import {
+	CreateDoctorSchema,
+	CreateDoctorResponseSchema,
+	LoginDoctorSchema
+} from '../validators/doctors.validator.js'
 
 /**
  * handles doctor registration
@@ -13,37 +18,16 @@ import logger from '../common/logger.js'
 export const registerDoctorHandler = async (req, res) => {
 	try {
 		// validate incoming request body
-		if (
-			!req.body.name ||
-			req.body.name === '' ||
-			!req.body.email ||
-			req.body.email === '' ||
-			!validator.isEmail(req.body.email) ||
-			!req.body.password ||
-			req.body.password === ''
-		) {
+		const [result, errors] = await validator(CreateDoctorSchema, req.body)
+
+		if (errors) {
 			return res.status(400).json({
 				message: 'invalid inputs',
-				errors: {
-					name:
-						!req.body.name || req.body.name === ''
-							? 'name is a required field & cannot be empty'
-							: undefined,
-					email:
-						!req.body.email || req.body.email === ''
-							? 'email is a required field & cannot be empty'
-							: !validator.isEmail(req.body.email)
-							? 'email has to be a valid email'
-							: undefined,
-					password:
-						!req.body.password || req.body.password === ''
-							? 'password is a required field & cannot be empty'
-							: undefined
-				}
+				errors
 			})
 		}
 
-		const doctorFound = await Doctor.findOne({ email: req.body.email })
+		const doctorFound = await Doctor.findOne({ email: result.email })
 
 		// if the user is already present send them an 403
 		if (doctorFound) {
@@ -54,29 +38,20 @@ export const registerDoctorHandler = async (req, res) => {
 		}
 
 		// hash the password
-		const hashedPassword = await argon.hash(req.body.password)
+		const hashedPassword = await argon.hash(result.password)
 
-		// user data with hashedPassword
-		const newUserPayload = {
-			name: req.body.name,
-			email: req.body.email,
-			password: hashedPassword
-		}
+		// add hashed password to our parsed result
+		result.password = hashedPassword
 
 		// save user
-		const savedDoctor = await Doctor.create(newUserPayload)
+		const savedDoctor = await Doctor.create(result)
 
-		// payload for response
-		const responsePayload = {
-			name: savedDoctor.name,
-			email: savedDoctor.email,
-			createdAt: savedDoctor.createdAt
-		}
+		const [doctor] = await validator(CreateDoctorResponseSchema, savedDoctor)
 
 		// if all is good send a 201 with the doctor data
 		return res.status(201).json({
 			message: 'registration successful!',
-			doctor: responsePayload
+			doctor
 		})
 	} catch (error) {
 		logger.error(error, 'failed to register user')
@@ -95,31 +70,17 @@ export const registerDoctorHandler = async (req, res) => {
 export const loginDoctorHandler = async (req, res) => {
 	try {
 		// validate incoming request body
-		if (
-			!req.body.email ||
-			req.body.email === '' ||
-			!validator.isEmail(req.body.email) ||
-			!req.body.password ||
-			req.body.password === ''
-		) {
+		const [result, errors] = await validator(LoginDoctorSchema, req.body)
+
+		// if the input contains error send a 400
+		if (errors) {
 			return res.status(400).json({
 				message: 'invalid inputs',
-				errors: {
-					email:
-						!req.body.email || req.body.email === ''
-							? 'email is a required field & cannot be empty'
-							: !validator.isEmail(req.body.email)
-							? 'email has to be a valid email'
-							: undefined,
-					password:
-						!req.body.password || req.body.password === ''
-							? 'password is a required field & cannot be empty'
-							: undefined
-				}
+				errors
 			})
 		}
 
-		const doctorFound = await Doctor.findOne({ email: req.body.email })
+		const doctorFound = await Doctor.findOne({ email: result.email })
 
 		// if no doctor is found throw a 403
 		if (!doctorFound) {
@@ -128,11 +89,13 @@ export const loginDoctorHandler = async (req, res) => {
 			})
 		}
 
+		// match hashed password with provided password
 		const passwordMatches = await argon.verify(
 			doctorFound.password,
 			req.body.password
 		)
 
+		// if password does not match send a 403
 		if (!passwordMatches) {
 			return res.status(403).json({
 				message: 'failed to verify identity'

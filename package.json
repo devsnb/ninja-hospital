@@ -32,7 +32,6 @@
 		"passport-jwt": "^4.0.1",
 		"pino": "^8.15.0",
 		"pino-pretty": "^10.2.0",
-		"validator": "^13.11.0",
 		"zod": "^3.22.2"
 	},
 	"devDependencies": {
