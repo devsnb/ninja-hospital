@@ -36,7 +36,7 @@ const config = convict({
 		format: String,
 		default: '2h',
 		nullable: false,
-		env: 'JWT_SECRET'
+		env: 'JWT_VALIDITY'
 	}
 })
 
