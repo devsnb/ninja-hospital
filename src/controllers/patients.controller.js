@@ -1,4 +1,5 @@
 import Patient from '../models/patient.model.js'
+import Doctor from '../models/doctor.model.js'
 import validator from '../common/validator.js'
 import {
 	RegisterPatientSchema,
@@ -11,7 +12,6 @@ import {
  * @param {*} res express response object
  */
 export const registerPatientHandler = async (req, res) => {
-	console.log(req.user)
 	try {
 		// validate incoming request
 		const [result, errors] = await validator(RegisterPatientSchema, req.body)
@@ -36,6 +36,11 @@ export const registerPatientHandler = async (req, res) => {
 		result.doctor = req.user._id
 
 		const savedPatient = await Patient.create(result)
+
+		// add patient to the doctor relation
+		const doctor = await Doctor.findById(result.doctor)
+		doctor.patients.push(savedPatient)
+		await doctor.save()
 
 		const [patient] = await validator(
 			RegisterPatientResponseSchema,

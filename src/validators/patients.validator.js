@@ -1,4 +1,4 @@
-import z, { object, string } from 'zod'
+import z, { object, string, date } from 'zod'
 import mongoose from 'mongoose'
 
 export const RegisterPatientResponseSchema = object({
@@ -11,7 +11,7 @@ export const RegisterPatientResponseSchema = object({
 	})
 		.length(10, 'phone number must be of 10 digits')
 		.regex(/^[0-9]+$/, 'phone number must contain only numbers'),
-	createdAt: string({ required_error: 'createdAt is a required field' })
+	createdAt: date({ required_error: 'createdAt is a required field' })
 }).transform(patient => {
 	return {
 		id: patient._id.toString(),
