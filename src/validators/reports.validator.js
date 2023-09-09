@@ -1,4 +1,4 @@
-import z, { object, string, date, array } from 'zod'
+import z, { object, date, array } from 'zod'
 import mongoose from 'mongoose'
 
 import { CreateDoctorResponseSchema } from './doctors.validator.js'
@@ -43,12 +43,7 @@ export const CreateReportSchema = object({
 			'Positive-Admit'
 		],
 		{ required_error: 'status is a required field' }
-	),
-	patientPhoneNumber: string({
-		required_error: 'phoneNumber is a required field'
-	})
-		.length(10, 'phone number must be of 10 digits')
-		.regex(/^[0-9]+$/, 'phone number must contain only numbers')
+	)
 })
 
 /**

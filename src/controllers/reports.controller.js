@@ -19,6 +19,17 @@ import {
  */
 export const createReportHandler = async (req, res) => {
 	try {
+		let patientId = req.params['patientId']
+
+		if (!mongoose.Types.ObjectId.isValid(patientId)) {
+			return res.status(400).json({
+				message: 'invalid input',
+				errors: {
+					ObjectId: 'ObjectId is not valid'
+				}
+			})
+		}
+
 		const [result, errors] = await validator(CreateReportSchema, req.body)
 
 		// if error in validation send a 400
@@ -32,9 +43,7 @@ export const createReportHandler = async (req, res) => {
 		// set the created by doctor
 		result.createdBy = req.user._id
 
-		const patientFound = await Patient.findOne({
-			phoneNumber: result.patientPhoneNumber
-		})
+		const patientFound = await Patient.findById(patientId)
 
 		// send 403 if patient not found
 		if (!patientFound) {
